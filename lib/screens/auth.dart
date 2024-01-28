@@ -22,9 +22,6 @@ class _AuthScreenState extends State<AuthScreen> {
     if (_isValid) {
       _formKey.currentState!.save();
     }
-
-    print(_enteredEmail);
-    print(_enteredPassword);
   }
 
   @override

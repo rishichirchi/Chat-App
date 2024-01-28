@@ -1,3 +1,8 @@
+import 'dart:io';
+
+import 'package:chat_app/widget/user_image_picker.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -15,28 +20,37 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  var _isLogin = true;
+  var _isLoggedIn = true;
   var _enteredEmail;
   var _enteredPassword;
+
+  File? _pickedImage;
 
   void _submit() async {
     final _isValid = _formKey.currentState!.validate();
 
-    if (!_isValid) {
+    if (!_isValid || !_isLoggedIn && _pickedImage == null) {
       return;
     }
 
     _formKey.currentState!.save();
 
     try {
-      if (_isLogin) {
+      if (_isLoggedIn) {
         final userCredentials = _firebase.signInWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
-        print(userCredentials);
       } else {
         final userCredentials = await _firebase.createUserWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
-        print(userCredentials);
+
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('user_profile_pictures')
+            .child('${userCredentials.user!.uid}.jpg');
+
+        storageRef.putFile(_pickedImage!);
+
+        final imageUrl = await storageRef.getDownloadURL();
       }
     } on FirebaseAuthException catch (error) {
       ScaffoldMessenger.of(context).clearSnackBars();
@@ -73,6 +87,12 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (!_isLoggedIn)
+                            UserImagePicker(
+                              onPickImage: (image) {
+                                _pickedImage = image;
+                              },
+                            ),
                           TextFormField(
                             decoration: const InputDecoration(
                               labelText: 'Email Address',
@@ -115,15 +135,15 @@ class _AuthScreenState extends State<AuthScreen> {
                                   .colorScheme
                                   .primaryContainer,
                             ),
-                            child: Text(_isLogin ? 'Login' : "Signup"),
+                            child: Text(_isLoggedIn ? 'Login' : "Signup"),
                           ),
                           TextButton(
                             onPressed: () {
                               setState(() {
-                                _isLogin = !_isLogin;
+                                _isLoggedIn = !_isLoggedIn;
                               });
                             },
-                            child: Text(_isLogin
+                            child: Text(_isLoggedIn
                                 ? 'Create an account'
                                 : 'I already have an account'),
                           ),

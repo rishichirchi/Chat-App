@@ -24,6 +24,7 @@ class _AuthScreenState extends State<AuthScreen> {
   var _isLoggedIn = true;
   var _enteredEmail;
   var _enteredPassword;
+  var _enteredUsername;
 
   var _isAuthenticating = false;
 
@@ -62,10 +63,10 @@ class _AuthScreenState extends State<AuthScreen> {
             .collection('users')
             .doc(userCredentials.user!.uid)
             .set({
-              'username': '...',
-              'email': _enteredEmail,
-              'image_url': imageUrl,
-            });
+          'username': _enteredUsername,
+          'email': _enteredEmail,
+          'image_url': imageUrl,
+        });
       }
     } on FirebaseAuthException catch (error) {
       ScaffoldMessenger.of(context).clearSnackBars();
@@ -130,6 +131,23 @@ class _AuthScreenState extends State<AuthScreen> {
                             },
                             onSaved: (value) {
                               _enteredEmail = value;
+                            },
+                          ),
+                          if(!_isLoggedIn)
+                          TextFormField(
+                            decoration: const InputDecoration(labelText: "Username"),
+                            enableSuggestions: false,
+                            validator: (value) {
+                              if (value == null ||
+                                  value.isEmpty ||
+                                  value.trim().length < 4) {
+                                return 'The username should atleast 4 character long!';
+                              }
+
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _enteredUsername = value;
                             },
                           ),
                           TextFormField(
